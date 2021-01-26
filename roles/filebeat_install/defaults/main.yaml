@@ -1,0 +1,25 @@
+---
+
+# YUM repo URL
+filebeat_yum_repo_url: "{{ elastic_yum_repo_url | default('https://artifacts.elastic.co/packages/6.x/yum') }}"
+
+# YUM repo GPG key
+filebeat_yum_repo_key: "{{ elastic_yum_repo_key | default('https://artifacts.elastic.co/GPG-KEY-elasticsearch') }}"
+
+# Extra YUM repo params
+filebeat_yum_repo_params: "{{ elastic_yum_repo_params | default({}) }}"
+
+# GPG key for the APT repo
+filebeat_apt_repo_key: "{{ elastic_apt_repo_key | default('https://artifacts.elastic.co/GPG-KEY-elasticsearch') }}"
+
+# APT repo string
+filebeat_apt_repo_string: "{{ elastic_apt_repo_string | default('deb https://artifacts.elastic.co/packages/6.x/apt stable main') }}"
+
+# Extra APT repo params
+filebeat_apt_repo_params: "{{ elastic_apt_repo_params | default({}) }}"
+
+# Package to be installed (explicit version can be specified here)
+filebeat_pkg: filebeat
+
+# Name of the service
+filebeat_service: filebeat

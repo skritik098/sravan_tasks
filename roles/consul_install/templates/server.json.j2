@@ -1,0 +1,22 @@
+{
+"retry_join": ["{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"],
+"datacenter" : "{{ consul_datacenter_name }}",
+"data_dir" : "{{ consul_data_dir }}",
+"encrypt" : "{{ consul_key.stdout }}",
+"server" : {{ server_bool }},
+"node_name" : "{{ node_name }}",
+"log_level": "{{ log_level }}",
+"bootstrap_expect" : 1,
+"ports": {
+    "grpc": 8502
+    },
+"connect": {
+    "enabled": true
+    },
+"advertise_addr": "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}",
+"ui_config": {
+        "enabled" : true
+   },
+"bind_addr" : "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}",
+"client_addr" : "{{ client_address }}"
+}

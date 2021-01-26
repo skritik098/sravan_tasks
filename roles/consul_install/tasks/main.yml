@@ -1,0 +1,94 @@
+- name: Install yum-utils to get yum-config-manager command
+  yum:
+    name: "yum-utils"
+    state: present
+
+- name: Add the repo
+  command: "yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo"
+
+- name: Installing consul latest package
+  yum:
+    name: "consul"
+    state: present
+  when: latest == true
+
+- name: Install the specific version of consul package
+  yum:
+    name: "consul-{{ version }}.x86_64"
+  when: latest != true
+
+- name: Verify If consul is installed
+  command: "consul"
+  ignore_errors: true
+
+- name: Generate the consul encryption key
+  command: "consul keygen"
+  register: consul_key
+
+- name: Create consul agent config dirs
+  file:
+     path: "{{ consul_config_dir }}"
+     state: directory
+     mode: 0750
+     owner: consul
+     group: consul
+
+- name: Create consul agent config dirs
+  file:
+     path: "{{ consul_data_dir }}"
+     state: directory
+     mode: 0750
+     owner: consul
+     group: consul
+     recurse: true
+
+- name: Copy the Consul config file
+  template:
+    src: server.json.j2
+    dest: "{{ consul_config_dir }}/server.json"
+    owner: "{{ consul_username }}"
+    group: "{{ consul_groupname }}"
+    mode: 0750
+  notify: restart_service
+
+- name: Copy the Consul Systemd file
+  template:
+    src: consul.service.j2
+    dest: "/etc/systemd/system/consul.service"
+    owner: "{{ consul_username }}"
+    group: "{{ consul_groupname }}"
+    mode: 0640
+  notify: systemd_reload
+
+- name: Flushing the handler
+  meta: flush_handlers
+
+- name: Validate the consul agent config file
+  command: "consul validate {{ consul_config_dir }}/server.json"
+  register: consul_status
+
+- name: Start the Consul service
+  service:
+    name: "consul"
+    state: started
+    enabled: true
+
+- name: Adding the firewall rule
+  firewalld:
+    port: "{{  item }}/tcp"
+    state: enabled
+    permanent: yes
+    immediate: yes
+  loop:
+      - 8500
+      - 8300
+      - 8301
+      - 8302
+      - 8600
+
+
+
+# - name: Start the consule service
+#   shell: "(consul agent --config-dir={{ consul_config_dir }}/  &)"
+#   tags:
+#     - start_consul

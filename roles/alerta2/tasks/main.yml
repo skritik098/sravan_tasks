@@ -1,0 +1,125 @@
+---
+# tasks file for alerta2
+- name: Install Epel
+  yum:
+    name: "https://download-ib01.fedoraproject.org/pub/epel/7/x86_64/Packages/e/epel-release-7-13.noarch.rpm"
+    state: present
+
+- name: Installs the pip packages
+  yum:
+    name: 
+        - "python3"
+        - "python3-pip"
+        - "python3-devel"
+        - "nginx" 
+        - "gcc"
+        - "git"
+        - "uwsgi-plugin-python36"
+        # - "python3-venv"
+        - "python3-setuptools"
+    state: present
+
+- name: Install alerta Software through pip
+  pip:
+    name:
+        - "alerta-server"
+        - "alerta" 
+        - "uwsgi"
+        - "virtualenv"
+    state: present
+
+# - name: Check if alertd is installed successfully or not
+#   command: "alertd"
+#   async: 5
+#   poll: 1
+#   register: alert_status
+#   ignore_errors: yes
+
+# - name: Print Message
+#   debug:
+#     msg: "Alertd status is {{ alert_status.stdout }}"
+
+# - name: Check if alertd status if ok or not
+#   fail: msg="Please check the software package or security rules"
+#   when: "'Running' in {{ alert_status.stdout }}"
+
+# - name: Add the firewall rule
+#   firewalld:
+#     port: "8080/tcp"
+#     state: enabled
+#     immediate: yes
+#     permanent: yes
+
+- name: Download the alert webui
+  get_url:
+    url: "https://github.com/alerta/alerta-webui/releases/latest/download/alerta-webui.tar.gz"
+    dest: "/tmp/"
+
+- name: Unzip the content
+  command: "tar -zxvf /tmp/alerta-webui.tar.gz -C /tmp/"
+
+- name: Create the web directory
+  file:
+    path: "/var/www/html/"
+    state: directory
+    mode: 0750
+
+- name: Delete the content
+  shell: "rm -rf /var/www/html/*"
+
+- name: Copy the content to /var/www/html
+  tags: copy
+  shell: "cp -rf /tmp/dist/* /var/www/html/"
+
+- name: Edit the config.json file of WebUI
+  copy:
+    src: config.json
+    dest: "/var/www/html/config.json"
+    mode: 0750
+
+- name: Create a uWSGI File
+  copy:
+    content: | 
+        from alerta import create_app
+        app = create_app()
+    dest: "/var/www/wsgi.py"
+    mode: 0750
+
+- name: Copy the uWSGI Config file
+  copy:
+    src: uwsgi.ini
+    dest: "/etc/uwsgi.ini"
+    mode: 0750
+  notify: restart_uwsgi
+
+
+- name: Copy the systemd unit file
+  copy:
+    src: uwsgi.service
+    dest: "/etc/systemd/system/uwsgi.service"
+    mode: 0640
+  notify: daemon_reload
+
+- name: Flush Handlers
+  meta: flush_handlers
+
+
+- name: Start the uwsgi
+  service:
+    name: "uwsgi"
+    state: started
+    enabled: yes
+
+- name: Copy the nginx conf file
+  copy:
+    src: default
+    dest: "/etc/nginx/conf.d/alerta.conf"
+    mode: 0640
+  notify: restart_nginx
+
+
+- name: Check if Alertd is accessible
+  uri:
+    url: http://localhost:8080
+    method: GET
+    status_code: 200

@@ -1,0 +1,6 @@
+
+- name: Restart the service
+  service:
+    name: "consul"
+    state: restarted
+  listen: restart_service

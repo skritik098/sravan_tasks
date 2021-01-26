@@ -1,0 +1,82 @@
+---
+
+# Location of the config file
+filebeat_config_file: /etc/filebeat/filebeat.yml
+
+# Name of the service
+filebeat_service: filebeat
+
+
+# Default paths of the filebeat inputs
+filebeat_config_filebeat_inputs_paths:
+  - /var/log/*.log
+
+# Default filebeat inputs
+filebeat_config_filebeat_inputs__default:
+  - type: log
+    paths: "{{ filebeat_config_filebeat_inputs_paths }}"
+
+# Custom filebeat inputs
+filebeat_config_filebeat_inputs__custom: []
+
+# Final filebeat inputs
+filebeat_config_filebeat_inputs: "{{
+  filebeat_config_filebeat_inputs__default +
+  filebeat_config_filebeat_inputs__custom }}"
+
+
+# Default paths of the filebeat
+filebeat_config_filebeat__default:
+  inputs: "{{ filebeat_config_filebeat_inputs }}"
+
+# Custom filebeat
+filebeat_config_filebeat__custom: {}
+
+# Final filebeat
+filebeat_config_filebeat: "{{
+  filebeat_config_filebeat__default | combine(
+  filebeat_config_filebeat__custom) }}"
+
+
+# List of hosts of the output elasticsearch
+filebeat_config_output_elasticsearch_hosts:
+  - localhost:9200
+
+# Default output elasticsearch
+filebeat_config_output_elasticsearch__default:
+  hosts: "{{ filebeat_config_output_elasticsearch_hosts }}"
+
+# Custom output elasticsearch
+filebeat_config_output_elasticsearch__custom: {}
+
+# Final output elasticsearch
+filebeat_config_output_elasticsearch: "{{
+  filebeat_config_output_elasticsearch__default | combine(
+  filebeat_config_output_elasticsearch__custom) }}"
+
+
+# Default output
+filebeat_config_output__default:
+  elasticsearch: "{{ filebeat_config_output_elasticsearch }}"
+
+# Custom output
+filebeat_config_output__custom: {}
+
+# Final output
+filebeat_config_output: "{{
+  filebeat_config_output__default | combine(
+  filebeat_config_output__custom) }}"
+
+
+# Default configuration
+filebeat_config__default:
+  filebeat: "{{ filebeat_config_filebeat }}"
+  output: "{{ filebeat_config_output }}"
+
+# Custom configuration
+filebeat_config__custom: {}
+
+# Final configuration
+filebeat_config: "{{
+  filebeat_config__default | combine(
+  filebeat_config__custom) }}"

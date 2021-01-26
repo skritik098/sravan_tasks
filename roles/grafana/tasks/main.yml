@@ -1,0 +1,43 @@
+# - name: Install grafana
+#   yum:
+#     name: https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana-{{ version }}-1.x86_64.rpm
+#     state: latest
+
+- name: Install grafana
+  apt:
+    deb:  https://dl.grafana.com/oss/release/grafana_{{ version }}_amd64.deb
+    state: present
+  when: ansible_facts['os_family'] | lower == "debian"
+
+- name: Install grafana
+  yum:
+    name:  https://dl.grafana.com/oss/release/grafana-{{ version }}-1.x86_64.rpm
+    state: present
+  when: ansible_facts['os_family'] | lower != "debian"
+
+
+- name: "Grafana configuration file copy"
+  template:
+    src: "grafana.conf.j2"
+    dest: /etc/grafana/grafana.ini
+  notify: event_restart_grafana
+
+- name: "Grafana server started"
+  service:
+    name: grafana-server
+    enabled: true
+    state: started
+
+- name: Adding the firewall rule
+  firewalld:
+    port: "3000/tcp"
+    state: enabled
+    permanent: yes
+    immediate: yes
+
+
+- name: "Check if Grafana is accessible."
+  uri:
+    url: http://localhost:3000
+    method: GET
+    status_code: 200

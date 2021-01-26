@@ -1,0 +1,23 @@
+service {
+  name= "node_exporter"
+  address = ""
+  enable_tag_override = false
+  port = 9100
+  tags = ["node_exporter","tap"]
+
+  checks = [
+    {
+      id = "node_exporter-tcp",
+      interval = "10s"
+      tcp = "{{ inventory_hostname }}:9100",
+      timeout = "1s"
+    },
+    {
+      id = "node_exporter-health"
+      interval = "10s"
+      http = "{{ inventory_hostname }}:9100/metrics"
+      timeout = "1s"
+      tls_skip_verify = true
+    }
+  ]
+}

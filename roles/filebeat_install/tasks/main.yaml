@@ -1,0 +1,62 @@
+---
+
+- name: Test distribution
+  assert:
+    that: >
+      ansible_facts.os_family == "RedHat" or
+      ansible_facts.os_family == "Debian"
+
+- name: Create Filebeat YUM repo file
+  yum_repository:
+    name: elastic
+    description: Elastic YUM repo
+    baseurl: "{{ filebeat_yum_repo_url }}"
+    gpgkey: "{{ filebeat_yum_repo_key }}"
+  args: "{{ filebeat_yum_repo_params }}"
+  when: >
+    ansible_facts.os_family == 'RedHat'
+  tags:
+    - filebeat_pkg
+
+- name: Install Filebeat GPG key
+  apt_key:
+    url: "{{ filebeat_apt_repo_key }}"
+  when: >
+    ansible_facts.os_family == 'Debian'
+  tags:
+    - filebeat_pkg
+    - filebeat_aptrepo
+
+- name: Create Filebeat APT repo file
+  apt_repository:
+    repo: "{{ filebeat_apt_repo_string }}"
+  args: "{{ filebeat_apt_repo_params }}"
+  when: >
+    ansible_facts.os_family == 'Debian'
+  tags:
+    - filebeat_pkg
+    - filebeat_aptrepo
+
+- name: Install Filebeat package
+  package:
+    name: "{{ filebeat_pkg }}"
+    state: present
+  notify:
+    - Restart Filebeat service
+  tags:
+    - filebeat_pkg
+
+- name: Enable Filebeat service
+  service:
+    name: "{{ filebeat_service }}"
+    enabled: yes
+  tags:
+    - filebeat_service
+
+- name: Start Filebeat service
+  service:
+    name: "{{ filebeat_service }}"
+    state: started
+  register: filebeat_service_started
+  tags:
+    - filebeat_service
